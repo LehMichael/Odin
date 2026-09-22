@@ -1,5 +1,9 @@
 #if defined(GB_SYSTEM_WINDOWS)
-#include <llvm-c/Config/llvm-config.h>
+	#if defined(GB_CPU_ARM)
+		#include <llvm-c/Config/llvm-config_arm64.h>
+	#else
+		#include <llvm-c/Config/llvm-config_amd64.h>
+	#endif
 #else
 #include <llvm/Config/llvm-config.h>
 #endif
@@ -717,6 +721,18 @@ lbCallingConventionKind const lb_calling_convention_map[ProcCC_MAX] = {
 	lbCallingConvention_PreserveAll,   // ProcCC_PreserveAll,
 
 };
+
+gb_internal lbCallingConventionKind lb_calling_convention(ProcCallingConvention calling_convention) {
+	// Windows on ARM64 has a single platform calling convention. LLVM's
+	// x86_stdcall convention is invalid for AArch64, even though system
+	// and Win32 declarations are represented as stdcall by the checker.
+	if (build_context.metrics.os == TargetOs_windows &&
+	    build_context.metrics.arch == TargetArch_arm64 &&
+	    calling_convention == ProcCC_StdCall) {
+		return lbCallingConvention_C;
+	}
+	return lb_calling_convention_map[calling_convention];
+}
 
 enum : LLVMDWARFTypeEncoding {
 	LLVMDWARFTypeEncoding_Address = 1,
