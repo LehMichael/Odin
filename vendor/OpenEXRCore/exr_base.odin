@@ -7,7 +7,13 @@ when ODIN_OS == .Windows {
 	when OPENEXRCORE_SHARED {
 		#panic("Dynamic linking is not supported for OpenEXRCore yet")
 	} else {
-		foreign import lib_ "OpenEXRCore-3_3.lib"
+		when ODIN_ARCH == .amd64 {
+			foreign import lib_ "OpenEXRCore-3_3.lib"
+		} else when ODIN_ARCH == .arm64 {
+			foreign import lib_ "arm64/OpenEXRCore-3_3.lib"
+		} else {
+			foreign import lib_ "i386/OpenEXRCore-3_3.lib"
+		}
 	}
 } else {
 	foreign import lib_ "system:OpenEXRCore-3_3"

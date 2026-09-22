@@ -2,7 +2,13 @@
 package directx_dxc
 
 when ODIN_OS == .Windows {
-	foreign import dxcompiler "dxcompiler.lib"
+	when ODIN_ARCH == .amd64 {
+		foreign import dxcompiler "dxcompiler.lib"
+	} else when ODIN_ARCH == .arm64 {
+		foreign import dxcompiler "arm64/dxcompiler.lib"
+	} else {
+		foreign import dxcompiler "i386/dxcompiler.lib"
+	}
 } else {
 	foreign import dxcompiler "system:dxcompiler"
 }

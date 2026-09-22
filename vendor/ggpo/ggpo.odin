@@ -14,7 +14,17 @@ into new and existing games as easy as possible.
 */
 package vendor_ggpo
 
-foreign import lib "GGPO.lib"
+when ODIN_OS == .Windows {
+	when ODIN_ARCH == .amd64 {
+		foreign import lib "GGPO.lib"
+	} else when ODIN_ARCH == .arm64 {
+		foreign import lib "arm64/GGPO.lib"
+	} else {
+		foreign import lib "i386/GGPO.lib"
+	}
+} else {
+	foreign import lib "GGPO.lib"
+}
 
 import c "core:c/libc"
 
