@@ -99,3 +99,8 @@ _cpu_core_count :: proc "contextless" () -> (physical: int, logical: int, ok: bo
 	}
 	return physical, logical, physical_ok || logical_ok
 }
+
+@(init, private)
+_init_cpu_name :: proc "contextless" () {
+	_cpu_name_arm_generic()
+}

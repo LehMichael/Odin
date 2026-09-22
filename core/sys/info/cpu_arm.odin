@@ -53,15 +53,8 @@ _cpu_name :: proc() -> (name: string) {
 	return _name
 }
 
-@(init, private)
-_init_cpu_name :: proc "contextless" () {
-	when ODIN_OS == .Darwin {
-		if unix.sysctlbyname("machdep.cpu.brand_string", &_name_buf) {
-			_name = string(cstring(rawptr(&_name_buf)))
-			return
-		}
-	}
-
+@(private)
+_cpu_name_arm_generic :: proc "contextless" () {
 	when ODIN_ARCH == .arm64 {
 		copy(_name_buf[:], "ARM64")
 		_name = string(_name_buf[:len("ARM64")])

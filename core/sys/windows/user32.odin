@@ -378,7 +378,7 @@ CreateWindowW :: #force_inline proc "system" (
 	)
 }
 
-when ODIN_ARCH == .amd64 {
+when ODIN_ARCH == .amd64 || ODIN_ARCH == .arm64 {
 	@(default_calling_convention="system")
 	foreign user32 {
 		GetClassLongPtrW :: proc(hWnd: HWND, nIndex: INT) -> ULONG_PTR ---
