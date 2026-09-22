@@ -8,7 +8,7 @@ on:
 jobs:
   build_windows:
     name: Windows Build
-    if: github.repository == 'odin-lang/Odin'
+    if: github.repository == 'odin-lang/Odin' || github.event_name == 'workflow_dispatch'
     runs-on: windows-2022
     steps:
       - uses: actions/checkout@v4
@@ -17,16 +17,16 @@ jobs:
       - name: build Odin
         shell: cmd
         run: |
-          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat
-          ./build.bat 1 1
+          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+          call build.bat 1 1
       - name: Odin run
         shell: cmd
         run: |
-          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat
+          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
           odin run examples/demo
       - name: Copy artifacts
         run: |
-          rm bin/llvm/windows/LLVM-C.lib
+          rm bin/llvm/windows/x64/LLVM-C.lib
           mkdir dist
           cp odin.exe dist
           cp LICENSE dist
@@ -37,11 +37,50 @@ jobs:
           cp -r vendor dist
           cp -r bin dist
           cp -r examples dist
+          powershell -NoProfile -ExecutionPolicy Bypass -File ci/remove_other_windows_arch.ps1 -Architecture amd64 -Root dist
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           include-hidden-files: true
           name: windows_artifacts
+          path: dist
+  build_windows_arm64:
+    name: Windows ARM64 Build
+    if: github.repository == 'odin-lang/Odin' || github.event_name == 'workflow_dispatch'
+    runs-on: windows-11-arm
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - name: build Odin
+        shell: cmd
+        run: |
+          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" arm64
+          call build.bat 1 1
+      - name: Odin run
+        shell: cmd
+        run: |
+          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" arm64
+          odin run examples/demo
+      - name: Copy artifacts
+        run: |
+          rm bin/llvm/windows/arm64/LLVM-C.lib
+          mkdir dist
+          cp odin.exe dist
+          cp LICENSE dist
+          cp LLVM-C.dll dist
+          cp -r shared dist
+          cp -r base dist
+          cp -r core dist
+          cp -r vendor dist
+          cp -r bin dist
+          cp -r examples dist
+          powershell -NoProfile -ExecutionPolicy Bypass -File ci/remove_other_windows_arch.ps1 -Architecture arm64 -Root dist
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          include-hidden-files: true
+          name: windows_arm64_artifacts
           path: dist
   build_linux:
     strategy:
@@ -51,7 +90,7 @@ jobs:
       ARCH: ${{ matrix.arch }}
       DOCKER_IMAGE: ${{ matrix.arch == 'amd64' && 'alpine:3.24' || 'arm64v8/alpine:3.24' }}
     name: Linux Build ${{ matrix.arch }}
-    if: github.repository == 'odin-lang/Odin'
+    if: github.repository == 'odin-lang/Odin' || github.event_name == 'workflow_dispatch'
     runs-on: ${{ matrix.arch == 'amd64' && 'ubuntu-latest' || 'ubuntu-24.04-arm' }}
     steps:
       - uses: actions/checkout@v4
@@ -99,7 +138,7 @@ jobs:
     env:
       ARCH: ${{ matrix.arch }}
     name: Macos Build ${{ matrix.arch }}
-    if: github.repository == 'odin-lang/Odin'
+    if: github.repository == 'odin-lang/Odin' || github.event_name == 'workflow_dispatch'
     runs-on: ${{ matrix.arch == 'amd64' && 'macos-15-intel' || 'macos-latest' }}
     steps:
       - uses: actions/checkout@v4
@@ -141,7 +180,8 @@ jobs:
           path: dist.tar.gz
   upload_b2:
     runs-on: [ubuntu-latest]
-    needs: [build_windows, build_macos, build_linux]
+    needs: [build_windows, build_windows_arm64, build_macos, build_linux]
+    if: github.repository == 'odin-lang/Odin'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -169,6 +209,12 @@ jobs:
         with:
           name: linux_artifacts
           path: linux_artifacts
+
+      - name: Download Windows ARM64 artifacts
+        uses: actions/download-artifact@v4.1.7
+        with:
+          name: windows_arm64_artifacts
+          path: windows_arm64_artifacts
 
       - name: Download Ubuntu ARM artifacts
         uses: actions/download-artifact@v4.1.7
@@ -202,6 +248,7 @@ jobs:
         run: |
           file linux_artifacts/dist.tar.gz
           python3 ci/nightly.py artifact windows-amd64 windows_artifacts/
+          python3 ci/nightly.py artifact windows-arm64 windows_arm64_artifacts/
           python3 ci/nightly.py artifact linux-amd64 linux_artifacts/dist.tar.gz
           python3 ci/nightly.py artifact linux-arm64 linux_arm_artifacts/dist.tar.gz
           python3 ci/nightly.py artifact macos-amd64 macos_artifacts/dist.tar.gz

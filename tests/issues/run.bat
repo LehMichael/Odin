@@ -50,7 +50,7 @@ set COMMON=-define:ODIN_TEST_FANCY=false -file -vet -strict-style -ignore-unused
 ..\..\..\odin check ..\test_issue_ellipsis_type_call.odin -no-entry-point %COMMON% 2>&1 | find /c "Error:" | findstr /x "10" || exit /b
 ..\..\..\odin check ..\test_issue_foreign_redeclaration.odin -no-entry-point %COMMON% || exit /b
 ..\..\..\odin check ..\test_issue_foreign_redeclaration_mismatch.odin -no-entry-point %COMMON% 2>&1 | find /c "Error:" | findstr /x "1" || exit /b
-..\..\..\odin doc ..\test_issue_asm_doc_category.odin -file 2>&1 | find /c "asm templates" | findstr /x "1" || exit /b
+..\..\..\odin doc ..\test_issue_asm_doc_category.odin -file -target:windows_amd64 2>&1 | find /c "asm templates" | findstr /x "1" || exit /b
 ..\..\..\odin build ..\test_issue_7037.odin %COMMON% -o:none  || exit /b
 ..\..\..\odin test ..\test_issue_7421.odin %COMMON% || exit /b
 ..\..\..\odin check ..\test_issue_7421_tagged_duplicate.odin %COMMON% 2>&1 | find /c "Error: Duplicate case" | findstr /x "1" || exit /b

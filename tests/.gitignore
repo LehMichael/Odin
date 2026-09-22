@@ -17,6 +17,12 @@
 *.pdb
 *.sh
 
+# Windows NO_CRT test
+!/windows/no_crt/run.bat
+
+# Windows DLL ABI test driver and generated MSVC/Odin outputs.
+!/windows/abi/run.bat
+
 # Ignore documentation-related files.
 /documentation/verify/
 /documentation/all.odin-doc
