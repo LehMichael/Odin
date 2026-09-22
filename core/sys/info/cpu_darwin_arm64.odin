@@ -98,3 +98,12 @@ _init_cpu_features :: proc "contextless" () -> () {
 		try_set(&_features, "hw.optional.arm.FEAT_SSBS", .ssbs)
 	}
 }
+
+@(init, private)
+_init_cpu_name :: proc "contextless" () {
+	if unix.sysctlbyname("machdep.cpu.brand_string", &_name_buf) {
+		_name = string(cstring(rawptr(&_name_buf)))
+		return
+	}
+	_cpu_name_arm_generic()
+}
