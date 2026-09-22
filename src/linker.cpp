@@ -248,6 +248,11 @@ try_cross_linking:;
 	#endif
 
 		bool is_osx = build_context.metrics.os == TargetOs_darwin;
+		if (is_windows && build_context.metrics.arch == TargetArch_arm64 &&
+		    build_context.linker_choice == Linker_radlink) {
+			gb_printf_err("radlink is currently unsupported on ARM64.\n");
+			return 1;
+		}
 
 
 		switch (build_context.linker_choice) {
@@ -321,6 +326,8 @@ try_cross_linking:;
 				string_map_set(&libs_normalized, lowered_name, entry.name);
 			}
 		#endif
+			String vs_exe_path = path_to_string(heap_allocator(), build_context.build_paths[BuildPath_VS_EXE]);
+			defer (gb_free(heap_allocator(), vs_exe_path.text));
 
 			for (Entity *e : gen->foreign_libraries) {
 				GB_ASSERT(e->kind == Entity_LibraryName);
@@ -368,36 +375,49 @@ try_cross_linking:;
 								obj_file = concatenate_strings(permanent_allocator(), asm_file, str_lit(".obj"));
 							}
 
-							String obj_format = str_lit("win64");
-						#if defined(GB_ARCH_32_BIT)
-							obj_format = str_lit("win32");
-						#endif
+							if (build_context.metrics.arch == TargetArch_arm64) {
+								result = system_exec_command_line_app("armasm64",
+									"\"%.*sarmasm64.exe\" -nologo "
+									"-o \"%.*s\" "
+									"%.*s "
+									"\"%.*s\"",
+									LIT(vs_exe_path),
+									LIT(obj_file),
+									LIT(build_context.extra_assembler_flags),
+									LIT(asm_file)
+								);
+							} else {
+								String obj_format = str_lit("win64");
+								#if defined(GB_ARCH_32_BIT)
+									obj_format = str_lit("win32");
+								#endif
 
-						#if defined(GB_SYSTEM_WINDOWS)
-							char nasm_path[4096] = {0};
-							gb_snprintf(
-								nasm_path,
-								gb_count_of(nasm_path) - 1,
-								"%.*s\\bin\\nasm\\windows\\nasm.exe",
-								LIT(build_context.ODIN_ROOT)
-							);
-						#else
-							const char *nasm_path = gb_get_env("ODIN_NASM_PATH", permanent_allocator());
-							if (nasm_path == nullptr) {
-								nasm_path = "nasm";
+							#if defined(GB_SYSTEM_WINDOWS)
+								char nasm_path[4096] = {0};
+								gb_snprintf(
+									nasm_path,
+									gb_count_of(nasm_path) - 1,
+									"%.*s\\bin\\nasm\\windows\\nasm.exe",
+									LIT(build_context.ODIN_ROOT)
+								);
+							#else
+								const char *nasm_path = gb_get_env("ODIN_NASM_PATH", permanent_allocator());
+								if (nasm_path == nullptr) {
+									nasm_path = "nasm";
+								}
+							#endif
+								result = system_exec_command_line_app("nasm",
+									"\"%s\" \"%.*s\" "
+									"-f \"%.*s\" "
+									"-o \"%.*s\" "
+									"%.*s "
+									"",
+									nasm_path, LIT(asm_file),
+									LIT(obj_format),
+									LIT(obj_file),
+									LIT(build_context.extra_assembler_flags)
+								);
 							}
-						#endif
-							result = system_exec_command_line_app("nasm",
-								"\"%s\" \"%.*s\" "
-								"-f \"%.*s\" "
-								"-o \"%.*s\" "
-								"%.*s "
-								"",
-								nasm_path, LIT(asm_file),
-								LIT(obj_format),
-								LIT(obj_file),
-								LIT(build_context.extra_assembler_flags)
-							);
 
 							if (result) {
 								return result;
@@ -457,9 +477,6 @@ try_cross_linking:;
 			for (String const &object_path : gen->output_object_paths) {
 				object_files = gb_string_append_fmt(object_files, "\"%.*s\" ", LIT(object_path));
 			}
-
-			String vs_exe_path = path_to_string(heap_allocator(), build_context.build_paths[BuildPath_VS_EXE]);
-			defer (gb_free(heap_allocator(), vs_exe_path.text));
 
 			String windows_sdk_bin_path = path_to_string(heap_allocator(), build_context.build_paths[BuildPath_Win_SDK_Bin_Path]);
 			defer (gb_free(heap_allocator(), windows_sdk_bin_path.text));

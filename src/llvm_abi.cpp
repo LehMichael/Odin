@@ -157,6 +157,11 @@ gb_internal lbCallingConventionKind lb_calling_convention_kind(ProcCallingConven
 	if (is_arch_wasm()) {
 		return lbCallingConvention_C;
 	}
+	// Windows ARM64 uses the platform C convention for Win32 stdcall declarations.
+	if (build_context.metrics.os == TargetOs_windows &&
+	    build_context.metrics.arch == TargetArch_arm64 && cc == ProcCC_StdCall) {
+		return lbCallingConvention_C;
+	}
 	return lb_calling_convention_map[cc];
 }
 

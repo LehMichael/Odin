@@ -556,6 +556,29 @@ gb_internal String concatenate4_strings(gbAllocator a, String const &x, String c
 	data[len] = 0;
 	return make_string(data, len);
 }
+gb_internal String concatenate5_strings(gbAllocator a, String const &x, String const &y, String const &z, String const &w, String const &v) {
+	isize len = x.len+y.len+z.len+w.len+v.len;
+	u8 *data = gb_alloc_array(a, u8, len+1);
+	gb_memmove(data,                         x.text, x.len);
+	gb_memmove(data+x.len,                   y.text, y.len);
+	gb_memmove(data+x.len+y.len,             z.text, z.len);
+	gb_memmove(data+x.len+y.len+z.len,       w.text, w.len);
+	gb_memmove(data+x.len+y.len+z.len+w.len, v.text, v.len);
+	data[len] = 0;
+	return make_string(data, len);
+}
+gb_internal String concatenate6_strings(gbAllocator a, String const &x, String const &y, String const &z, String const &w, String const &v, String const &u) {
+	isize len = x.len+y.len+z.len+w.len+v.len+u.len;
+	u8 *data = gb_alloc_array(a, u8, len+1);
+	gb_memmove(data,                               x.text, x.len);
+	gb_memmove(data+x.len,                         y.text, y.len);
+	gb_memmove(data+x.len+y.len,                   z.text, z.len);
+	gb_memmove(data+x.len+y.len+z.len,             w.text, w.len);
+	gb_memmove(data+x.len+y.len+z.len+w.len,       v.text, v.len);
+	gb_memmove(data+x.len+y.len+z.len+w.len+v.len, u.text, u.len);
+	data[len] = 0;
+	return make_string(data, len);
+}
 
 #if defined(GB_SYSTEM_WINDOWS)
 gb_internal String escape_char(gbAllocator a, String s, char cte) {

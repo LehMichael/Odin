@@ -1,5 +1,9 @@
 #if defined(GB_SYSTEM_WINDOWS)
-#include <llvm-c/Config/llvm-config.h>
+	#if defined(GB_CPU_ARM)
+		#include <llvm-c/Config/llvm-config_arm64.h>
+	#else
+		#include <llvm-c/Config/llvm-config_amd64.h>
+	#endif
 #else
 #include <llvm/Config/llvm-config.h>
 #endif
