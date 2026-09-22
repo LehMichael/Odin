@@ -211,6 +211,9 @@ try_cross_linking:;
 			string_set_init(&asm_files, 64);
 			defer (string_set_destroy(&asm_files));
 
+			String vs_exe_path = path_to_string(heap_allocator(), build_context.build_paths[BuildPath_VS_EXE]);
+			defer (gb_free(heap_allocator(), vs_exe_path.text));
+
 			for (Entity *e : gen->foreign_libraries) {
 				GB_ASSERT(e->kind == Entity_LibraryName);
 				// NOTE(bill): Add these before the linking values
@@ -245,22 +248,35 @@ try_cross_linking:;
 								obj_file = concatenate_strings(permanent_allocator(), asm_file, str_lit(".obj"));
 							}
 
-							String obj_format = str_lit("win64");
-						#if defined(GB_ARCH_32_BIT)
-							obj_format = str_lit("win32");
-						#endif
+							if (build_context.metrics.arch == TargetArch_arm64) {
+								result = system_exec_command_line_app("armasm64",
+									"\"%.*sarmasm64.exe\" -nologo "
+									"-o \"%.*s\" "
+									"%.*s "
+									"\"%.*s\"",
+									LIT(vs_exe_path),
+									LIT(obj_file),
+									LIT(build_context.extra_assembler_flags),
+									LIT(asm_file)
+								);
+							} else {
+								String obj_format = str_lit("win64");
+								#if defined(GB_ARCH_32_BIT)
+									obj_format = str_lit("win32");
+								#endif
 
-							result = system_exec_command_line_app("nasm",
-								"\"%.*s\\bin\\nasm\\windows\\nasm.exe\" \"%.*s\" "
-								"-f \"%.*s\" "
-								"-o \"%.*s\" "
-								"%.*s "
-								"",
-								LIT(build_context.ODIN_ROOT), LIT(asm_file),
-								LIT(obj_format),
-								LIT(obj_file),
-								LIT(build_context.extra_assembler_flags)
-							);
+								result = system_exec_command_line_app("nasm",
+									"\"%.*s\\bin\\nasm\\windows\\nasm.exe\" \"%.*s\" "
+									"-f \"%.*s\" "
+									"-o \"%.*s\" "
+									"%.*s "
+									"",
+									LIT(build_context.ODIN_ROOT), LIT(asm_file),
+									LIT(obj_format),
+									LIT(obj_file),
+									LIT(build_context.extra_assembler_flags)
+								);
+							}
 
 							if (result) {
 								return result;
@@ -313,9 +329,6 @@ try_cross_linking:;
 				object_files = gb_string_append_fmt(object_files, "\"%.*s\" ", LIT(object_path));
 			}
 
-			String vs_exe_path = path_to_string(heap_allocator(), build_context.build_paths[BuildPath_VS_EXE]);
-			defer (gb_free(heap_allocator(), vs_exe_path.text));
-
 			String windows_sdk_bin_path = path_to_string(heap_allocator(), build_context.build_paths[BuildPath_Win_SDK_Bin_Path]);
 			defer (gb_free(heap_allocator(), windows_sdk_bin_path.text));
 
@@ -349,6 +362,10 @@ try_cross_linking:;
 				}
 				break;
 			case Linker_radlink:
+				if (build_context.metrics.arch == TargetArch_arm64) {
+					gb_printf_err("radlink is currently unsupported on ARM64.\n");
+					return 1;
+				}
 				result = system_exec_command_line_app("msvc-rad-link",
 					"\"%.*s\\bin\\radlink\" %s -OUT:\"%.*s\" %s "
 					"/nologo /incremental:no /opt:ref /subsystem:%.*s "
