@@ -21,11 +21,7 @@
 
 #include "llvm-c/ExternC.h"
 #include "llvm-c/Types.h"
-#if defined(GB_CPU_ARM)
-  #include <llvm-c/Config/llvm-config_arm64.h>
-#else
-  #include <llvm-c/Config/llvm-config_amd64.h>
-#endif
+#include "Config/llvm-config.h"
 
 LLVM_C_EXTERN_C_BEGIN
 
