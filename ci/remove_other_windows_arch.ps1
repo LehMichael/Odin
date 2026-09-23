@@ -56,11 +56,9 @@ Get-ChildItem -LiteralPath $vendor_path -Directory -Recurse |
 	Sort-Object FullName -Descending |
 	ForEach-Object { Remove-DirectoryInsideRoot $_.FullName }
 
-$other_llvm_arch = if ($Architecture -eq "amd64") { "arm64" } else { "x64" }
-Remove-DirectoryInsideRoot (Join-Path $root_path "bin\llvm\windows\$other_llvm_arch")
+Remove-DirectoryInsideRoot (Join-Path $root_path "bin\llvm\windows\$other_arch")
 
-$llvm_arch = if ($Architecture -eq "amd64") { "x64" } else { "arm64" }
-$llvm_path = Join-Path $root_path "bin\llvm\windows\$llvm_arch"
+$llvm_path = Join-Path $root_path "bin\llvm\windows\$Architecture"
 Remove-FileInsideRoot (Join-Path $llvm_path "LLVM-C.dll")
 Remove-FileInsideRoot (Join-Path $llvm_path "LLVM-C.lib")
 Remove-FileInsideRoot (Join-Path $llvm_path "lld-link.exe")
