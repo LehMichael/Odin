@@ -132,15 +132,7 @@ struct MicroarchFeatureList {
 	String features;
 };
 
-#if defined(GB_SYSTEM_WINDOWS)
-	#if defined(GB_CPU_ARM)
-		#include <llvm-c/Config/llvm-config_arm64.h>
-	#else
-		#include <llvm-c/Config/llvm-config_amd64.h>
-	#endif
-#else
-	#include <llvm/Config/llvm-config.h>
-#endif
+#include "llvm-c/Config/llvm-config.h"
 #include "build_settings_microarch.cpp"
 
 gb_global TargetEndianKind target_endians[TargetArch_COUNT] = {

@@ -1,12 +1,4 @@
-#if defined(GB_SYSTEM_WINDOWS)
-	#if defined(GB_CPU_ARM)
-		#include <llvm-c/Config/llvm-config_arm64.h>
-	#else
-		#include <llvm-c/Config/llvm-config_amd64.h>
-	#endif
-#else
-#include <llvm/Config/llvm-config.h>
-#endif
+#include "llvm-c/Config/llvm-config.h"
 
 #if LLVM_VERSION_MAJOR < 17
 #error "LLVM Version 17 is the minimum required"
