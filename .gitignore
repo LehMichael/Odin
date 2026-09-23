@@ -282,9 +282,9 @@ bin/*
 bin/llvm/*
 !bin/llvm/windows/
 bin/llvm/windows/*
-!bin/llvm/windows/x64/
+!bin/llvm/windows/amd64/
 !bin/llvm/windows/arm64/
-!bin/llvm/windows/x64/*.exe
+!bin/llvm/windows/amd64/*.exe
 !bin/llvm/windows/arm64/*.exe
 **/*.dSYM
 *.bin

@@ -129,7 +129,9 @@ set compiler_warnings= ^
 
 set compiler_includes= ^
 	/Isrc\
-if "%ODIN_LLVM_DIR%" == "" set ODIN_LLVM_DIR=bin\llvm\windows\%odin_arch%
+set llvm_arch=%odin_arch%
+if /I "%llvm_arch%" == "x64" set llvm_arch=amd64
+if "%ODIN_LLVM_DIR%" == "" set ODIN_LLVM_DIR=bin\llvm\windows\%llvm_arch%
 if "%ODIN_LLVM_LIB%" == "" set ODIN_LLVM_LIB=%ODIN_LLVM_DIR%\LLVM-C.lib
 if "%ODIN_LLVM_DLL%" == "" set ODIN_LLVM_DLL=%ODIN_LLVM_DIR%\LLVM-C.dll
 if "%ODIN_LLD_LINK%" == "" set ODIN_LLD_LINK=%ODIN_LLVM_DIR%\lld-link.exe
