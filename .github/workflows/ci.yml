@@ -335,15 +335,21 @@ jobs:
       - uses: actions/checkout@v4
         with:
           lfs: true
+      - name: Locate Visual Studio
+        shell: pwsh
+        run: |
+          $vs = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.ARM64 -property installationPath
+          if (-not $vs) { throw "Visual Studio ARM64 tools not found" }
+          "ODIN_CI_VS=$vs" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
       - name: Build Odin
         shell: cmd
         run: |
-          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" arm64
+          call "%ODIN_CI_VS%\VC\Auxiliary\Build\vcvarsall.bat" arm64 || exit /b 1
           call build.bat 1
       - name: Cross-compile Windows AMD64 resource executable
         shell: cmd
         run: |
-          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" arm64_x64
+          call "%ODIN_CI_VS%\VC\Auxiliary\Build\vcvarsall.bat" arm64_x64 || exit /b 1
           if not exist build\cross_compile mkdir build\cross_compile
           odin build tests\windows\cross_compile -target:windows_amd64 -resource:tests\windows\cross_compile\resource.rc -out:build\cross_compile\windows_amd64.exe
           dumpbin /headers build\cross_compile\windows_amd64.exe | findstr /C:"8664 machine (x64)"
@@ -351,7 +357,7 @@ jobs:
       - name: Reject RAD linker for Windows ARM64
         shell: cmd
         run: |
-          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" arm64
+          call "%ODIN_CI_VS%\VC\Auxiliary\Build\vcvarsall.bat" arm64 || exit /b 1
           odin build tests\windows\cross_compile -target:windows_arm64 -linker:radlink > build\cross_compile\radlink_arm64.log 2>&1
           if not errorlevel 1 exit /b 1
           type build\cross_compile\radlink_arm64.log
@@ -363,68 +369,68 @@ jobs:
       - name: Odin check and run
         shell: cmd
         run: |
-          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" arm64
+          call "%ODIN_CI_VS%\VC\Auxiliary\Build\vcvarsall.bat" arm64 || exit /b 1
           odin check examples/demo -vet -target:windows_arm64
       - name: Odin run
         shell: cmd
         run: |
-          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" arm64
+          call "%ODIN_CI_VS%\VC\Auxiliary\Build\vcvarsall.bat" arm64 || exit /b 1
           odin run examples/demo -target:windows_arm64
       - name: Odin run -debug
         shell: cmd
         run: |
-          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" arm64
+          call "%ODIN_CI_VS%\VC\Auxiliary\Build\vcvarsall.bat" arm64 || exit /b 1
           odin run examples/demo -debug -vet -vet-tabs -strict-style -vet-style -warnings-as-errors -disallow-do -target:windows_arm64
       - name: Odin check examples/all
         shell: cmd
         run: |
-          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" arm64
+          call "%ODIN_CI_VS%\VC\Auxiliary\Build\vcvarsall.bat" arm64 || exit /b 1
           odin check examples/all -vet -vet-tabs -strict-style -vet-style -warnings-as-errors -disallow-do -target:windows_arm64
       - name: Odin check examples/all/sdl3
         shell: cmd
         run: |
-          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" arm64
+          call "%ODIN_CI_VS%\VC\Auxiliary\Build\vcvarsall.bat" arm64 || exit /b 1
           odin check examples/all/sdl3 -vet -vet-tabs -strict-style -vet-style -warnings-as-errors -disallow-do -no-entry-point -target:windows_arm64
       - name: Core library tests
         shell: cmd
         run: |
-          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" arm64
+          call "%ODIN_CI_VS%\VC\Auxiliary\Build\vcvarsall.bat" arm64 || exit /b 1
           odin test tests/core/normal.odin -file -all-packages -vet -vet-tabs -strict-style -vet-style -warnings-as-errors -disallow-do -define:ODIN_TEST_FANCY=false -define:ODIN_TEST_FAIL_ON_BAD_MEMORY=true -target:windows_arm64
       - name: Optimized core library tests
         shell: cmd
         run: |
-          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" arm64
+          call "%ODIN_CI_VS%\VC\Auxiliary\Build\vcvarsall.bat" arm64 || exit /b 1
           odin test tests/core/speed.odin -o:speed -file -all-packages -vet -vet-tabs -strict-style -vet-style -warnings-as-errors -disallow-do -define:ODIN_TEST_FANCY=false -define:ODIN_TEST_FAIL_ON_BAD_MEMORY=true -target:windows_arm64
       - name: Wycheproof tests
         shell: cmd
         run: |
-          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" arm64
+          call "%ODIN_CI_VS%\VC\Auxiliary\Build\vcvarsall.bat" arm64 || exit /b 1
           odin test tests/core/crypto/wycheproof -vet -vet-tabs -strict-style -vet-style -vet-cast -warnings-as-errors -disallow-do -o:speed -microarch:native -target:windows_arm64
       - name: Noise Protocol Framework tests
         shell: cmd
         run: |
-          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" arm64
+          call "%ODIN_CI_VS%\VC\Auxiliary\Build\vcvarsall.bat" arm64 || exit /b 1
           odin test tests/core/crypto/noise -vet -vet-tabs -strict-style -vet-style -vet-cast -warnings-as-errors -disallow-do -o:speed -microarch:native -target:windows_arm64
       - name: X.509 limbo tests
         shell: cmd
         run: |
-          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" arm64
+          call "%ODIN_CI_VS%\VC\Auxiliary\Build\vcvarsall.bat" arm64 || exit /b 1
           odin test tests/core/crypto/x509_limbo -vet -vet-tabs -strict-style -vet-style -vet-cast -warnings-as-errors -disallow-do -o:speed -microarch:native -target:windows_arm64
       - name: Vendor library tests
         shell: cmd
         run: |
-          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" arm64
+          call "%ODIN_CI_VS%\VC\Auxiliary\Build\vcvarsall.bat" arm64 || exit /b 1
           copy vendor\lua\5.4\windows\arm64\*.dll .
           odin test tests/vendor -all-packages -vet -vet-tabs -strict-style -vet-style -warnings-as-errors -disallow-do -define:ODIN_TEST_FANCY=false -define:ODIN_TEST_FAIL_ON_BAD_MEMORY=true -target:windows_arm64
       - name: Odin internals tests
         shell: cmd
         run: |
-          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" arm64
+          call "%ODIN_CI_VS%\VC\Auxiliary\Build\vcvarsall.bat" arm64 || exit /b 1
           odin test tests/internal -all-packages -vet -vet-tabs -strict-style -vet-style -warnings-as-errors -disallow-do -define:ODIN_TEST_FANCY=false -define:ODIN_TEST_FAIL_ON_BAD_MEMORY=true -target:windows_arm64
       - name: AArch64 instruction encoding tests
         shell: cmd
         run: |
-          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" arm64
+          call "%ODIN_CI_VS%\VC\Auxiliary\Build\vcvarsall.bat" arm64 || exit /b 1
           odin run core/rexcode/isa/arm64/tests -target:windows_arm64
       - name: Reject ASan for Windows ARM64
         shell: pwsh
@@ -440,23 +446,23 @@ jobs:
       - name: Windows DLL ABI tests
         shell: cmd
         run: |
-          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" arm64
+          call "%ODIN_CI_VS%\VC\Auxiliary\Build\vcvarsall.bat" arm64 || exit /b 1
           call tests\windows\abi\run.bat
       - name: Check issues
         shell: cmd
         run: |
-          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" arm64
+          call "%ODIN_CI_VS%\VC\Auxiliary\Build\vcvarsall.bat" arm64 || exit /b 1
           cd tests\issues
           call run.bat
       - name: Check benchmarks
         shell: cmd
         run: |
-          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" arm64
+          call "%ODIN_CI_VS%\VC\Auxiliary\Build\vcvarsall.bat" arm64 || exit /b 1
           odin check tests/benchmark -vet -strict-style -no-entry-point -target:windows_arm64
       - name: Odin documentation tests
         shell: cmd
         run: |
-          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" arm64
+          call "%ODIN_CI_VS%\VC\Auxiliary\Build\vcvarsall.bat" arm64 || exit /b 1
           cd tests\documentation
           call build.bat
 
